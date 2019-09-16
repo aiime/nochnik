@@ -65,7 +65,7 @@ namespace Nochnik
             hours = DateTime.Now.Hour;
             minutes = DateTime.Now.Minute;
             seconds = DateTime.Now.Second;
-            UpdateWallpaperClock(hours, minutes);
+            UpdateWallpaperClock(hours, minutes, false);
 
             System.Timers.Timer timer = new System.Timers.Timer(1000);
             timer.Elapsed += OnTimerTick;
@@ -91,7 +91,7 @@ namespace Nochnik
             minutesX = screenCenterX + (colonWidth / 2);
             minutesY = screenCenterY - twoDigitHeight / 2;
 
-            UpdateWallpaperClock(hours, minutes);
+            UpdateWallpaperClock(hours, minutes, false);
         }
 
         public void RestoreInitialWallpaper()
@@ -119,7 +119,7 @@ namespace Nochnik
                 }
             }
 
-            UpdateWallpaperClock(hours, minutes);
+            UpdateWallpaperClock(hours, minutes, false);
         }
 
         int hoursX;
@@ -129,18 +129,63 @@ namespace Nochnik
         int minutesX;
         int minutesY;
 
-        void UpdateWallpaperClock(int hours, int minutes)
+        int red = 0;
+        int green = 0;
+        int blue = 0;
+
+        // TODO: optimization.
+        void UpdateWallpaperClock(int hours, int minutes, bool colorChanged)
         {
-            hoursImage = HOUR_DIGITS[hours];
-            minutesImage = MINUTE_DIGITS[minutes];
-            
+            Bitmap bitmapH = new Bitmap(HOUR_DIGITS[hours]);
+            for (int x = 0; x < bitmapH.Width; x++)
+            {
+                for (int y = 0; y < bitmapH.Height; y++)
+                {
+                    byte alpha = bitmapH.GetPixel(x, y).A;
+                    if (bitmapH.GetPixel(x, y).A > 0) bitmapH.SetPixel(x, y, Color.FromArgb(alpha, red, green, blue));
+                }
+            }
+
+            Bitmap bitmapM = new Bitmap(MINUTE_DIGITS[minutes]);
+            for (int x = 0; x < bitmapM.Width; x++)
+            {
+                for (int y = 0; y < bitmapM.Height; y++)
+                {
+                    byte alpha = bitmapM.GetPixel(x, y).A;
+                    if (alpha > 0) bitmapM.SetPixel(x, y, Color.FromArgb(alpha, red, green, blue));
+                }
+            }
+
+            Bitmap bitmapC = new Bitmap(colon);
+            for (int x = 0; x < bitmapC.Width; x++)
+            {
+                for (int y = 0; y < bitmapC.Height; y++)
+                {
+                    byte alpha = bitmapC.GetPixel(x, y).A;
+                    if (alpha > 0) bitmapC.SetPixel(x, y, Color.FromArgb(alpha, red, green, blue));
+                }
+            }
+
+            hoursImage = bitmapH;
+            minutesImage = bitmapM;
+            colon = bitmapC;
+
             g.DrawImage(initialWallpaper, 0, 0);
-            g.DrawImage(hoursImage, hoursX, hoursY, 600, 430);          
+            g.DrawImage(hoursImage, hoursX, hoursY, 600, 430);
             g.DrawImage(colon, colonX, colonY, 70, 279);
             g.DrawImage(minutesImage, minutesX, minutesY, 600, 430);
 
             RESULT_CLOCK_IMAGE.Save(RESULT_CLOCK_IMAGE_PATH, ImageFormat.Jpeg);
             SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, RESULT_CLOCK_IMAGE_PATH, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+        }
+
+        public void ChangeClockColor(int r, int g, int b)
+        {
+            red = r;
+            green = g;
+            blue = b;
+
+            UpdateWallpaperClock(hours, minutes, true);
         }
 
         static void FillDigitArrays()

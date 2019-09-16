@@ -53,6 +53,12 @@
     <Compile Include="ClockPropertiesForm.Designer.cs">
       <DependentUpon>ClockPropertiesForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ColorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ColorForm.Designer.cs">
+      <DependentUpon>ColorForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="KeyDetector.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -65,6 +71,9 @@
     <Compile Include="WallpaperClock.cs" />
     <EmbeddedResource Include="ClockPropertiesForm.resx">
       <DependentUpon>ClockPropertiesForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ColorForm.resx">
+      <DependentUpon>ColorForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

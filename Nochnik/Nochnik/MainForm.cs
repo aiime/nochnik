@@ -18,8 +18,10 @@ namespace Nochnik
         void CreateProgramTray()
         {
             trayIcon.ContextMenu = new ContextMenu();
+            trayIcon.ContextMenu.MenuItems.Add(new MenuItem("Position", new EventHandler(TrayIcon_ClockProperties)));
+            trayIcon.ContextMenu.MenuItems.Add(new MenuItem("Color", new EventHandler(TrayIcon_Color)));
+            trayIcon.ContextMenu.MenuItems.Add(new MenuItem("-"));
             trayIcon.ContextMenu.MenuItems.Add(new MenuItem("Exit", new EventHandler(TrayIcon_Exit)));
-            trayIcon.ContextMenu.MenuItems.Add(new MenuItem("Clock Position", new EventHandler(TrayIcon_ClockProperties)));
             trayIcon.Visible = true;
         }
 
@@ -31,6 +33,11 @@ namespace Nochnik
         void TrayIcon_ClockProperties(object sender, EventArgs e)
         {
             new ClockPropertiesForm(this).Show();
+        }
+
+        void TrayIcon_Color(object sender, EventArgs e)
+        {
+            new ColorForm(wallpaperClock).Show();
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
