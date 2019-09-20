@@ -68,7 +68,11 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="User.cs" />
+    <Compile Include="UserController.cs" />
     <Compile Include="WallpaperClock.cs" />
+    <Compile Include="WallpaperPainter.cs" />
+    <Compile Include="IWallpaperPainterSubscriber.cs" />
     <EmbeddedResource Include="ClockPropertiesForm.resx">
       <DependentUpon>ClockPropertiesForm.cs</DependentUpon>
     </EmbeddedResource>

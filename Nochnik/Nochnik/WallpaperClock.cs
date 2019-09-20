@@ -1,43 +1,42 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using System.IO;
 
 namespace Nochnik
 {
-    public class WallpaperClock
+    class WallpaperClock : IWallpaperPainterSubscriber
     {
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        static extern Int32 SystemParametersInfo(UInt32 uiAction, UInt32 uiParam, String pvParam, UInt32 fWinIni);
-        static readonly UInt32 SPI_SETDESKWALLPAPER = 20;
-        static readonly UInt32 SPIF_UPDATEINIFILE = 0x1;
-        static readonly UInt32 SPIF_SENDCHANGE = 0x2;
+        readonly Image[] MINUTE_DIGITS = new Image[60];
+        readonly Image[] HOUR_DIGITS = new Image[25];
+        readonly Image COLON = Properties.Resources.colon as Image;
+        Image coloredHours;
+        Image coloredColon;
+        Image coloredMinutes;
 
-        static readonly string RESULT_CLOCK_IMAGE_PATH = AppDomain.CurrentDomain.BaseDirectory + @"\clock";
-        static readonly Image[] MINUTE_DIGITS = new Image[60];
-        static readonly Image[] HOUR_DIGITS = new Image[25];
-        static readonly Bitmap RESULT_CLOCK_IMAGE = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+        int hours = 0;
+        int minutes = 0;
+        int seconds = 0;
 
-        static int hours = 0;
-        static int minutes = 0;
-        static int seconds = 0;
-        static Image hoursImage;
-        static Image minutesImage;
-        static Image colon = Properties.Resources.colon as Image;
+        int hoursX;
+        int hoursY;
+        int colonX;
+        int colonY;
+        int minutesX;
+        int minutesY;
 
-        static Graphics g = Graphics.FromImage(RESULT_CLOCK_IMAGE);
-        static Image initialWallpaper;
+        int r = 0;
+        int g = 0;
+        int b = 0;
 
-        public WallpaperClock()
+        WallpaperPainter wallpaperPainter;
+        List<WallpaperPart> clockParts = new List<WallpaperPart>();
+
+        public WallpaperClock(WallpaperPainter wallpaperPainter)
         {
+            this.wallpaperPainter = wallpaperPainter;
+            this.wallpaperPainter.Subscribe(this);
             FillDigitArrays();
-            DirectoryInfo directoryInfo = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Microsoft\Windows\Themes\CachedFiles");
-            string wallpaperPath = directoryInfo.GetFiles()[0].FullName; // TODO: DirectoryNotFoundException handler.
-            initialWallpaper = Image.FromFile(wallpaperPath);
-            initialWallpaper.Save(AppDomain.CurrentDomain.BaseDirectory + @"ini_wallpaper");
-            initialWallpaper = Image.FromFile(AppDomain.CurrentDomain.BaseDirectory + @"ini_wallpaper");
 
             int colonWidth = Properties.Resources.colon.Width;
             int colonHeight = Properties.Resources.colon.Height;
@@ -65,9 +64,9 @@ namespace Nochnik
             hours = DateTime.Now.Hour;
             minutes = DateTime.Now.Minute;
             seconds = DateTime.Now.Second;
-            UpdateWallpaperClock(hours, minutes, false);
+            UpdateWallpaperClock(hours, minutes);
 
-            System.Timers.Timer timer = new System.Timers.Timer(1000);
+            System.Timers.Timer timer = new System.Timers.Timer(interval);
             timer.Elapsed += OnTimerTick;
             timer.Enabled = true;
         }
@@ -79,8 +78,8 @@ namespace Nochnik
 
             int colonWidth = Properties.Resources.colon.Width;
             int colonHeight = Properties.Resources.colon.Height;
-            int twoDigitWidth = Properties.Resources._0.Width;
-            int twoDigitHeight = Properties.Resources._0.Height;
+            int twoDigitWidth = Properties.Resources._00.Width;
+            int twoDigitHeight = Properties.Resources._00.Height;
 
             hoursX = screenCenterX - twoDigitWidth - colonWidth;
             hoursY = screenCenterY - (twoDigitHeight / 2);
@@ -91,14 +90,16 @@ namespace Nochnik
             minutesX = screenCenterX + (colonWidth / 2);
             minutesY = screenCenterY - twoDigitHeight / 2;
 
-            UpdateWallpaperClock(hours, minutes, false);
+            UpdateWallpaperClock(hours, minutes);
         }
 
-        public void RestoreInitialWallpaper()
+        public void ChangeClockColor(int r, int g, int b)
         {
-            g.DrawImage(initialWallpaper, 0, 0);
-            RESULT_CLOCK_IMAGE.Save(RESULT_CLOCK_IMAGE_PATH, ImageFormat.Jpeg);
-            SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, RESULT_CLOCK_IMAGE_PATH, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+            this.r = r;
+            this.g = g;
+            this.b = b;
+
+            UpdateWallpaperClock(hours, minutes);
         }
 
         void OnTimerTick(object sender, System.Timers.ElapsedEventArgs e)
@@ -108,87 +109,54 @@ namespace Nochnik
             else seconds = 0;
 
             if (DateTime.Now.Second < 50) seconds = DateTime.Now.Second; // Time correction.
+
             minutes++;
             if (minutes == 60)
             {
                 minutes = 0;
                 hours++;
-                if (hours == 25)
+                if (hours == 24)
                 {
                     hours = 0;
                 }
             }
 
-            UpdateWallpaperClock(hours, minutes, false);
+            UpdateWallpaperClock(hours, minutes);
         }
 
-        int hoursX;
-        int hoursY;
-        int colonX;
-        int colonY;
-        int minutesX;
-        int minutesY;
-
-        int red = 0;
-        int green = 0;
-        int blue = 0;
-
-        // TODO: optimization.
-        void UpdateWallpaperClock(int hours, int minutes, bool colorChanged)
+        void UpdateWallpaperClock(int hours, int minutes)
         {
-            Bitmap bitmapH = new Bitmap(HOUR_DIGITS[hours]);
-            for (int x = 0; x < bitmapH.Width; x++)
+            coloredHours = ColorImage(HOUR_DIGITS[hours], r, g, b);
+            coloredColon = ColorImage(COLON, r, g, b);
+            coloredMinutes = ColorImage(MINUTE_DIGITS[minutes], r, g, b);
+
+            clockParts.Clear();
+            clockParts.Add(new WallpaperPart(coloredHours, hoursX, hoursY, 600, 430));
+            clockParts.Add(new WallpaperPart(coloredColon, colonX, colonY, 70, 279));
+            clockParts.Add(new WallpaperPart(coloredMinutes, minutesX, minutesY, 600, 430));
+
+            lock (wallpaperPainter)
             {
-                for (int y = 0; y < bitmapH.Height; y++)
-                {
-                    byte alpha = bitmapH.GetPixel(x, y).A;
-                    if (bitmapH.GetPixel(x, y).A > 0) bitmapH.SetPixel(x, y, Color.FromArgb(alpha, red, green, blue));
-                }
-            }
-
-            Bitmap bitmapM = new Bitmap(MINUTE_DIGITS[minutes]);
-            for (int x = 0; x < bitmapM.Width; x++)
-            {
-                for (int y = 0; y < bitmapM.Height; y++)
-                {
-                    byte alpha = bitmapM.GetPixel(x, y).A;
-                    if (alpha > 0) bitmapM.SetPixel(x, y, Color.FromArgb(alpha, red, green, blue));
-                }
-            }
-
-            Bitmap bitmapC = new Bitmap(colon);
-            for (int x = 0; x < bitmapC.Width; x++)
-            {
-                for (int y = 0; y < bitmapC.Height; y++)
-                {
-                    byte alpha = bitmapC.GetPixel(x, y).A;
-                    if (alpha > 0) bitmapC.SetPixel(x, y, Color.FromArgb(alpha, red, green, blue));
-                }
-            }
-
-            hoursImage = bitmapH;
-            minutesImage = bitmapM;
-            colon = bitmapC;
-
-            g.DrawImage(initialWallpaper, 0, 0);
-            g.DrawImage(hoursImage, hoursX, hoursY, 600, 430);
-            g.DrawImage(colon, colonX, colonY, 70, 279);
-            g.DrawImage(minutesImage, minutesX, minutesY, 600, 430);
-
-            RESULT_CLOCK_IMAGE.Save(RESULT_CLOCK_IMAGE_PATH, ImageFormat.Jpeg);
-            SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, RESULT_CLOCK_IMAGE_PATH, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                wallpaperPainter.SetResultWallpaper();
+            }        
         }
 
-        public void ChangeClockColor(int r, int g, int b)
+        Bitmap ColorImage(Image image, int r, int g, int b)
         {
-            red = r;
-            green = g;
-            blue = b;
+            Bitmap bitmap = new Bitmap(image);
+            for (int x = 0; x < bitmap.Width; x++)
+            {
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    byte alpha = bitmap.GetPixel(x, y).A;
+                    if (alpha > 0) bitmap.SetPixel(x, y, Color.FromArgb(alpha, r, g, b));
+                }
+            }
 
-            UpdateWallpaperClock(hours, minutes, true);
+            return bitmap;
         }
 
-        static void FillDigitArrays()
+        void FillDigitArrays()
         {
             for (int i = 0; i < 10; i++)
             {
@@ -203,6 +171,11 @@ namespace Nochnik
             {
                 HOUR_DIGITS[i] = Properties.Resources.ResourceManager.GetObject("_" + i) as Image;
             }
+        }
+
+        public List<WallpaperPart> GetWallpaperParts()
+        {
+            return clockParts;
         }
     }
 }

@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace Nochnik
 {
-    public partial class ClockPropertiesForm : Form
+    partial class ClockPropertiesForm : Form
     {
         MainForm mainForm;
         public ClockPropertiesForm(MainForm mainForm)

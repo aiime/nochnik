@@ -3,15 +3,20 @@ using System.Windows.Forms;
 
 namespace Nochnik
 {
-    public partial class MainForm : Form
+    partial class MainForm : Form
     {
-        public WallpaperClock wallpaperClock = new WallpaperClock();
+        public WallpaperClock wallpaperClock;
+        WallpaperPainter wallpaperPainter;
 
         public MainForm()
         {
+            wallpaperPainter = new WallpaperPainter();
+            wallpaperClock = new WallpaperClock(wallpaperPainter);
+            UserController userController = new UserController(wallpaperPainter);
+
             InitializeComponent();
             CreateProgramTray();
-            wallpaperClock.Start(3000);
+            wallpaperClock.Start(1000);
             KeyDetector.Start(this);
         }
 
@@ -42,7 +47,7 @@ namespace Nochnik
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            wallpaperClock.RestoreInitialWallpaper();
+            wallpaperPainter.SetInitialWallpaper();
         }
     }
 }

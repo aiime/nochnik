@@ -3,7 +3,7 @@ using System.Windows.Forms;
 
 namespace Nochnik
 {
-    public partial class ColorForm : Form
+    partial class ColorForm : Form
     {
         WallpaperClock wallpaperClock;
         public ColorForm(WallpaperClock wallpaperClock)
