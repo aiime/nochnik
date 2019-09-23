@@ -8,15 +8,31 @@ namespace Nochnik
 {
     class UserController : IWallpaperPainterSubscriber
     {
-        const int MAX_USERS = 3;
         List<WallpaperPart> userBarParts = new List<WallpaperPart>();
-        List<Image> users = new List<Image>();
+        public List<User> users = new List<User>();
+        WallpaperPainter wallpaperPainter;
 
         public UserController(WallpaperPainter wallpaperPainter)
         {
-            wallpaperPainter.Subscribe(this);
+            this.wallpaperPainter = wallpaperPainter;
+            this.wallpaperPainter.Subscribe(this);
 
-            FileInfo[] userPictures = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory).GetFiles("*.png");
+            DirectoryInfo[] userDirectories = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Users").GetDirectories();
+            
+            for (int i = 0; i < userDirectories.Length; i++)
+            {
+                
+
+                Dictionary<UserStatus, Image> userAvatarByStatus = new Dictionary<UserStatus, Image>();
+                FileInfo[] userAvatars = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Users" + @"\" + userDirectories[i].Name).GetFiles();
+                userAvatarByStatus.Add(UserStatus.Working, Image.FromFile(userAvatars[0].FullName));
+                userAvatarByStatus.Add(UserStatus.Resting, Image.FromFile(userAvatars[1].FullName));
+                userAvatarByStatus.Add(UserStatus.AtHome, Image.FromFile(userAvatars[2].FullName));
+                userAvatarByStatus.Add(UserStatus.OnHoliday, Image.FromFile(userAvatars[3].FullName));
+
+                User user = new User(userDirectories[i].Name, userAvatarByStatus, UserStatus.Working, this);
+                users.Add(user);
+            }
 
             int screenWidth = Screen.PrimaryScreen.Bounds.Width;
             int screenHeight = Screen.PrimaryScreen.Bounds.Height;
@@ -26,13 +42,11 @@ namespace Nochnik
             int colonHeight = Properties.Resources.colon.Height;
             int twoDigitWidth = Properties.Resources._0.Width;
             int twoDigitHeight = Properties.Resources._0.Height;
-
-            for (int i = 0; i < userPictures.Length && i < MAX_USERS; i++)
+            int userCenterY = screenCenterY + twoDigitHeight / 2;
+            for (int i = 0; i < users.Count; i++)
             {
                 int userCenterX = screenCenterX + colonWidth / 2 + twoDigitWidth - 80 * (i + 1);
-                int userCenterY = screenCenterY + twoDigitHeight / 2;
-                users.Add(Image.FromFile(userPictures[i].FullName));
-                userBarParts.Add(new WallpaperPart(Image.FromFile(userPictures[i].FullName), userCenterX, userCenterY, 80, 105));
+                userBarParts.Add(new WallpaperPart(users[i].GetUserAvatar(UserStatus.Working), userCenterX, userCenterY, 80, 105));
             }
 
             lock (wallpaperPainter)
@@ -41,9 +55,39 @@ namespace Nochnik
             }
         }
 
-        public void AddNochnik(int n)
+        public int GetUserCount()
         {
-             
+            return users.Count;
+        }
+
+        public User GetUser(int n)
+        {
+            return users[n];
+        }
+
+        public void UpdateUserStatuses()
+        {
+            userBarParts.Clear();
+
+            int screenWidth = Screen.PrimaryScreen.Bounds.Width;
+            int screenHeight = Screen.PrimaryScreen.Bounds.Height;
+            int screenCenterX = screenWidth / 2;
+            int screenCenterY = screenHeight / 2;
+            int colonWidth = Properties.Resources.colon.Width;
+            int colonHeight = Properties.Resources.colon.Height;
+            int twoDigitWidth = Properties.Resources._0.Width;
+            int twoDigitHeight = Properties.Resources._0.Height;
+            int userCenterY = screenCenterY + twoDigitHeight / 2;
+            for (int i = 0; i < users.Count; i++)
+            {
+                int userCenterX = screenCenterX + colonWidth / 2 + twoDigitWidth - 80 * (i + 1);
+                userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userCenterX, userCenterY, 80, 105));
+            }
+
+            lock (wallpaperPainter)
+            {
+                wallpaperPainter.SetResultWallpaper();
+            }
         }
 
         public List<WallpaperPart> GetWallpaperParts()

@@ -7,12 +7,13 @@ namespace Nochnik
     {
         public WallpaperClock wallpaperClock;
         WallpaperPainter wallpaperPainter;
+        UserController userController;
 
         public MainForm()
         {
             wallpaperPainter = new WallpaperPainter();
             wallpaperClock = new WallpaperClock(wallpaperPainter);
-            UserController userController = new UserController(wallpaperPainter);
+            userController = new UserController(wallpaperPainter);
 
             InitializeComponent();
             CreateProgramTray();
@@ -23,6 +24,7 @@ namespace Nochnik
         void CreateProgramTray()
         {
             trayIcon.ContextMenu = new ContextMenu();
+            trayIcon.ContextMenu.MenuItems.Add(new MenuItem("Users", (s, a) => { new UsersForm(userController).Show(); }));
             trayIcon.ContextMenu.MenuItems.Add(new MenuItem("Position", new EventHandler(TrayIcon_ClockProperties)));
             trayIcon.ContextMenu.MenuItems.Add(new MenuItem("Color", new EventHandler(TrayIcon_Color)));
             trayIcon.ContextMenu.MenuItems.Add(new MenuItem("-"));
