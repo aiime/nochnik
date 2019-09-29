@@ -13,7 +13,8 @@ namespace Nochnik
 
     class User
     {
-        public string Name { get; set; }
+        public string Name { get; private set; }
+        public string Number { get; private set; }
 
         public UserStatus CurrentStatus
         {
@@ -24,7 +25,6 @@ namespace Nochnik
             set
             {
                 currentStatus = value;
-                userController.UpdateUserStatuses();
             }
         }
 
@@ -32,12 +32,18 @@ namespace Nochnik
         Dictionary<UserStatus, Image> avatarByStatus;
         UserController userController;
 
-        public User(string name, Dictionary<UserStatus, Image> avatarByStatus, UserStatus currentStatus, UserController userController)
+        public User(string name, string number, Dictionary<UserStatus, Image> avatarByStatus, UserStatus currentStatus, UserController userController)
         {
             Name = name;
+            Number = number;
             this.avatarByStatus = avatarByStatus;
-            this.currentStatus = UserStatus.Working;
+            this.currentStatus = currentStatus;
             this.userController = userController;            
+        }
+
+        public void UpdateUserStatus()
+        {
+            userController.UpdateUserStatuses();
         }
 
         public Image GetUserAvatar(UserStatus userStatus)

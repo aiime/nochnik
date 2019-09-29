@@ -11,6 +11,8 @@ namespace Nochnik
         [STAThread]
         static void Main()
         {
+            Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + AppDomain.CurrentDomain.BaseDirectory);
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Form mainForm = new MainForm();

@@ -39,7 +39,7 @@
             this.UserListBox.FormattingEnabled = true;
             this.UserListBox.Location = new System.Drawing.Point(12, 12);
             this.UserListBox.Name = "UserListBox";
-            this.UserListBox.Size = new System.Drawing.Size(120, 212);
+            this.UserListBox.Size = new System.Drawing.Size(120, 147);
             this.UserListBox.TabIndex = 0;
             this.UserListBox.SelectedIndexChanged += new System.EventHandler(this.UserListBox_SelectedIndexChanged);
             // 
@@ -65,7 +65,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(315, 242);
+            this.ClientSize = new System.Drawing.Size(315, 172);
             this.Controls.Add(this.StatusLabel);
             this.Controls.Add(this.StatusComboBox);
             this.Controls.Add(this.UserListBox);

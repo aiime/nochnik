@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Collections.Generic;
+using Quartz;
+using Quartz.Impl;
+using System.Xml;
 
 namespace Nochnik
 {
@@ -18,6 +23,8 @@ namespace Nochnik
             InitializeComponent();
             CreateProgramTray();
             wallpaperClock.Start(1000);
+            StartNochnikEveryDay();
+            StopNochnikEveryDay();
             KeyDetector.Start(this);
         }
 
@@ -47,9 +54,96 @@ namespace Nochnik
             new ColorForm(wallpaperClock).Show();
         }
 
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             wallpaperPainter.SetInitialWallpaper();
+        }
+
+        void StartNochnikEveryDay()
+        {
+            IScheduler scheduler = StdSchedulerFactory.GetDefaultScheduler().Result;
+            scheduler.Start();
+
+            IJobDetail job = JobBuilder.Create<StartNochnikJob>()
+                .WithIdentity("StartNochnik")
+                .Build();
+
+            job.JobDataMap["wallpaperClock"] = wallpaperClock;
+            job.JobDataMap["userController"] = userController;
+
+            XmlDocument timeInfo = new XmlDocument();
+            timeInfo.Load(AppDomain.CurrentDomain.BaseDirectory + @"\time_info.xml");
+            int shiftStartHour = Int32.Parse(timeInfo.GetElementsByTagName("shift_start_hour")[0].InnerText);
+            int shiftStartMinute = Int32.Parse(timeInfo.GetElementsByTagName("shift_start_minute")[0].InnerText);
+            int shiftStartSecond = Int32.Parse(timeInfo.GetElementsByTagName("shift_start_second")[0].InnerText);
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity("StartNochnikTrigger")
+                .StartAt(DateBuilder.TodayAt(shiftStartHour, shiftStartMinute, shiftStartSecond))
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInHours(24)
+                    .RepeatForever())
+                .Build();
+
+            scheduler.ScheduleJob(job, trigger);
+        }
+
+        void StopNochnikEveryDay()
+        {
+            IScheduler scheduler = StdSchedulerFactory.GetDefaultScheduler().Result;
+            scheduler.Start();
+
+            IJobDetail job = JobBuilder.Create<StopNochnikJob>()
+                .WithIdentity("StopNochnik")
+                .Build();
+
+            job.JobDataMap["wallpaperClock"] = wallpaperClock;
+            job.JobDataMap["userController"] = userController;
+
+            XmlDocument timeInfo = new XmlDocument();
+            timeInfo.Load(AppDomain.CurrentDomain.BaseDirectory + @"\time_info.xml");
+            int shiftEndHour = Int32.Parse(timeInfo.GetElementsByTagName("shift_end_hour")[0].InnerText);
+            int shiftEndMinute = Int32.Parse(timeInfo.GetElementsByTagName("shift_end_minute")[0].InnerText);
+            int shiftEndSecond = Int32.Parse(timeInfo.GetElementsByTagName("shift_end_second")[0].InnerText);
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity("StopNochnikTrigger")
+                .StartAt(DateBuilder.TodayAt(shiftEndHour, shiftEndMinute, shiftEndSecond))
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInHours(24)
+                    .RepeatForever())
+                .Build();
+
+            scheduler.ScheduleJob(job, trigger);
+        }
+
+        class StartNochnikJob : IJob
+        {
+            async Task IJob.Execute(IJobExecutionContext context)
+            {
+                (context.JobDetail.JobDataMap["wallpaperClock"] as WallpaperClock).Start(1000);
+                (context.JobDetail.JobDataMap["userController"] as UserController).SetUserStatusesAccordingToSchedule();
+                (context.JobDetail.JobDataMap["userController"] as UserController).UpdateUserStatuses();
+                await Task.CompletedTask;
+            }
+        }
+
+        class StopNochnikJob : IJob
+        {
+            async Task IJob.Execute(IJobExecutionContext context)
+            {
+                (context.JobDetail.JobDataMap["wallpaperClock"] as WallpaperClock).Stop();
+
+                UserController userController = (context.JobDetail.JobDataMap["userController"] as UserController);
+                List<User> users = userController.users;
+                foreach (User user in users)
+                {
+                    user.CurrentStatus = UserStatus.AtHome;
+                }
+                userController.UpdateUserStatuses();
+
+                await Task.CompletedTask;
+            }
         }
     }
 }

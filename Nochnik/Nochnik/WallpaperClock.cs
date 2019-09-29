@@ -59,6 +59,7 @@ namespace Nochnik
             minutesY = screenCenterY - twoDigitHeight / 2;
         }
 
+        System.Timers.Timer timer;
         public void Start(double interval)
         {
             hours = DateTime.Now.Hour;
@@ -66,9 +67,20 @@ namespace Nochnik
             seconds = DateTime.Now.Second;
             UpdateWallpaperClock(hours, minutes);
 
-            System.Timers.Timer timer = new System.Timers.Timer(interval);
+            timer = new System.Timers.Timer(interval);
             timer.Elapsed += OnTimerTick;
             timer.Enabled = true;
+        }
+
+        public void Stop()
+        {
+            timer.Enabled = false;
+            timer.Elapsed -= OnTimerTick;
+            clockParts.Clear();
+            lock (wallpaperPainter)
+            {
+                wallpaperPainter.SetResultWallpaper();
+            }
         }
 
         public void ChangeClockPosition(int x, int y)
@@ -126,8 +138,12 @@ namespace Nochnik
 
         void UpdateWallpaperClock(int hours, int minutes)
         {
-            coloredHours = ColorImage(HOUR_DIGITS[hours], r, g, b);
-            coloredColon = ColorImage(COLON, r, g, b);
+            coloredHours?.Dispose();
+            coloredColon?.Dispose();
+            coloredMinutes?.Dispose();
+
+            coloredHours = ColorImage(HOUR_DIGITS[hours], r, g, b);           
+            coloredColon = ColorImage(COLON, r, g, b);         
             coloredMinutes = ColorImage(MINUTE_DIGITS[minutes], r, g, b);
 
             clockParts.Clear();
