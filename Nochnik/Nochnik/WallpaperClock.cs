@@ -62,6 +62,7 @@ namespace Nochnik
         System.Timers.Timer timer;
         public void Start(double interval)
         {
+            timerStopped = false;
             hours = DateTime.Now.Hour;
             minutes = DateTime.Now.Minute;
             seconds = DateTime.Now.Second;
@@ -72,6 +73,7 @@ namespace Nochnik
             timer.Enabled = true;
         }
 
+        bool timerStopped;
         public void Stop()
         {
             timer.Enabled = false;
@@ -79,6 +81,7 @@ namespace Nochnik
             clockParts.Clear();
             lock (wallpaperPainter)
             {
+                timerStopped = true;
                 wallpaperPainter.SetResultWallpaper();
             }
         }
@@ -153,7 +156,7 @@ namespace Nochnik
 
             lock (wallpaperPainter)
             {
-                wallpaperPainter.SetResultWallpaper();
+                if (!timerStopped) wallpaperPainter.SetResultWallpaper();             
             }        
         }
 

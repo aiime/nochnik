@@ -33,8 +33,9 @@ namespace Nochnik
                 userInfo.Load(AppDomain.CurrentDomain.BaseDirectory + @"\Users\" + userDirectories[i].Name + @"\user_info.xml");
                 string userName = userInfo.GetElementsByTagName("name")[0].InnerText;
                 string userNumber = userInfo.GetElementsByTagName("number")[0].InnerText;
+                int shiftsLeft = Int32.Parse(userInfo.GetElementsByTagName("shifts_left")[0].InnerText);
 
-                User user = new User(userName, userNumber, userAvatarByStatus, UserStatus.AtHome, this);
+                User user = new User(userName, userNumber, userInfo, userAvatarByStatus, UserStatus.AtHome, this, shiftsLeft);
                 users.Add(user);
             }
 
@@ -49,11 +50,42 @@ namespace Nochnik
             int colonHeight = Properties.Resources.colon.Height;
             int twoDigitWidth = Properties.Resources._0.Width;
             int twoDigitHeight = Properties.Resources._0.Height;
-            int userCenterY = screenCenterY + twoDigitHeight / 2;
+            int userAvatar_y = screenCenterY + twoDigitHeight / 2;
+            bool wasContract = false;
+            int contracts = 0;
             for (int i = 0; i < users.Count; i++)
             {
-                int userCenterX = screenCenterX + colonWidth / 2 + twoDigitWidth - 80 * (i + 1);
-                userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userCenterX, userCenterY, 80, 105));
+                if (users[i].UserInfo.GetElementsByTagName("contract")[0].InnerText == "yes")
+                {
+                    contracts++;
+                    wasContract = true;
+                    // Добавляем отображение аватара пользователя.
+                    int userAvatar_x =
+                        (screenCenterX + colonWidth / 2 + twoDigitWidth) - (80 * (i + 1)) -
+                        ((Properties.Resources.stick.Width + 3 + Properties.Resources.square.Width + 3 + Properties.Resources.circle.Width));
+                    userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userAvatar_x, userAvatar_y, 80, 105));
+
+                    // Добавляем отображение оставшихся смен пользователя.
+                    int userShiftView_x = userAvatar_x + 80 - 3;
+                    int userShiftView_y = userAvatar_y + 105;
+                    List<WallpaperPart> userShiftView = ShiftView.UpdateUserShiftView(users[i], userShiftView_x, userShiftView_y);
+                    userBarParts.AddRange(userShiftView);
+                }
+                else
+                {
+                    if (wasContract)
+                    {
+                        int userAvatar_x =
+                        (screenCenterX + colonWidth / 2 + twoDigitWidth) - (80 * (i + 1)) -
+                        ((Properties.Resources.stick.Width + 3 + Properties.Resources.square.Width + 3 + Properties.Resources.circle.Width) * contracts);
+                        userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userAvatar_x, userAvatar_y, 80, 105));
+                    }
+                    else
+                    {
+                        int userAvatar_x = (screenCenterX + colonWidth / 2 + twoDigitWidth) - (80 * (i + 1));
+                        userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userAvatar_x, userAvatar_y, 80, 105));
+                    }
+                }
             }         
 
             lock (wallpaperPainter)
@@ -74,11 +106,42 @@ namespace Nochnik
             int colonHeight = Properties.Resources.colon.Height;
             int twoDigitWidth = Properties.Resources._0.Width;
             int twoDigitHeight = Properties.Resources._0.Height;
-            int userCenterY = screenCenterY + twoDigitHeight / 2;
+            int userAvatar_y = screenCenterY + twoDigitHeight / 2;
+            bool wasContract = false;
+            int contracts = 0;
             for (int i = 0; i < users.Count; i++)
             {
-                int userCenterX = screenCenterX + colonWidth / 2 + twoDigitWidth - 80 * (i + 1);
-                userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userCenterX, userCenterY, 80, 105));
+                if (users[i].UserInfo.GetElementsByTagName("contract")[0].InnerText == "yes")
+                {
+                    contracts++;
+                    wasContract = true;
+                    // Добавляем отображение аватара пользователя.
+                    int userAvatar_x =
+                        (screenCenterX + colonWidth / 2 + twoDigitWidth) - (80 * (i + 1)) -
+                        ((Properties.Resources.stick.Width + 3 + Properties.Resources.square.Width + 3 + Properties.Resources.circle.Width));
+                    userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userAvatar_x, userAvatar_y, 80, 105));
+
+                    // Добавляем отображение оставшихся смен пользователя.
+                    int userShiftView_x = userAvatar_x + 80 - 3;
+                    int userShiftView_y = userAvatar_y + 105;
+                    List<WallpaperPart> userShiftView = ShiftView.UpdateUserShiftView(users[i], userShiftView_x, userShiftView_y);
+                    userBarParts.AddRange(userShiftView);
+                }
+                else
+                {
+                    if (wasContract)
+                    {
+                        int userAvatar_x =
+                        (screenCenterX + colonWidth / 2 + twoDigitWidth) - (80 * (i + 1)) -
+                        ((Properties.Resources.stick.Width + 3 + Properties.Resources.square.Width + 3 + Properties.Resources.circle.Width) * contracts);
+                        userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userAvatar_x, userAvatar_y, 80, 105));
+                    }
+                    else
+                    {
+                        int userAvatar_x = (screenCenterX + colonWidth / 2 + twoDigitWidth) - (80 * (i + 1));
+                        userBarParts.Add(new WallpaperPart(users[i].GetCurrentUserAvatar(), userAvatar_x, userAvatar_y, 80, 105));
+                    }
+                }
             }
 
             lock (wallpaperPainter)
@@ -87,7 +150,7 @@ namespace Nochnik
             }
         }
 
-        public List<WallpaperPart> GetWallpaperParts()
+        List<WallpaperPart> IWallpaperPainterSubscriber.GetWallpaperParts()
         {
             return userBarParts;
         }
@@ -102,7 +165,7 @@ namespace Nochnik
 
             for (int i = 0; i < userNumbers.Length; i++)
             {
-                users.Find(user => user.Number == userNumbers[i]).CurrentStatus = UserStatus.Working;
+                users.Find(user => user.Number == userNumbers[i]).currentStatus = UserStatus.Working;
             }
         }
 
@@ -110,8 +173,8 @@ namespace Nochnik
         {
             users.Sort((x, y) =>
             {
-                if (x.CurrentStatus == UserStatus.AtHome && y.CurrentStatus != UserStatus.AtHome) return 1;
-                else if (x.CurrentStatus != UserStatus.AtHome && y.CurrentStatus == UserStatus.AtHome) return -1;
+                if (x.currentStatus == UserStatus.AtHome && y.currentStatus != UserStatus.AtHome) return 1;
+                else if (x.currentStatus != UserStatus.AtHome && y.currentStatus == UserStatus.AtHome) return -1;
                 else return 0;
             });
         }

@@ -138,7 +138,12 @@ namespace Nochnik
                 List<User> users = userController.users;
                 foreach (User user in users)
                 {
-                    user.CurrentStatus = UserStatus.AtHome;
+                    if (user.currentStatus == UserStatus.Working)
+                    {
+                        user.ShiftsLeft--;
+                        user.ShiftsCompleted++;
+                    }
+                    user.currentStatus = UserStatus.AtHome;
                 }
                 userController.UpdateUserStatuses();
 

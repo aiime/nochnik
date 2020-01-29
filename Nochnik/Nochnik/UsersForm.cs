@@ -36,19 +36,19 @@ namespace Nochnik
             switch (StatusComboBox.SelectedItem)
             {
                 case ("Working"):
-                    (UserListBox.SelectedItem as User).CurrentStatus = UserStatus.Working;
+                    (UserListBox.SelectedItem as User).currentStatus = UserStatus.Working;
                     (UserListBox.SelectedItem as User).UpdateUserStatus();
                     break;
                 case ("Resting"):
-                    (UserListBox.SelectedItem as User).CurrentStatus = UserStatus.Resting;
+                    (UserListBox.SelectedItem as User).currentStatus = UserStatus.Resting;
                     (UserListBox.SelectedItem as User).UpdateUserStatus();
                     break;
                 case ("AtHome"):
-                    (UserListBox.SelectedItem as User).CurrentStatus = UserStatus.AtHome;
+                    (UserListBox.SelectedItem as User).currentStatus = UserStatus.AtHome;
                     (UserListBox.SelectedItem as User).UpdateUserStatus();
                     break;
                 case ("OnHoliday"):
-                    (UserListBox.SelectedItem as User).CurrentStatus = UserStatus.OnHoliday;
+                    (UserListBox.SelectedItem as User).currentStatus = UserStatus.OnHoliday;
                     (UserListBox.SelectedItem as User).UpdateUserStatus();
                     break;
             }
